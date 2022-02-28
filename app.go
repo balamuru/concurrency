@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,8 +18,76 @@ func main() {
 	// sequential()
 	// println()
 	// goroutines_naive()
-	goroutines_channels()
+	// goroutines_channels()
+	// goroutines_spinner()
+	goroutines_timeserver()
 
+}
+
+//client can connect via nc eg nc localhost 8000
+func goroutines_timeserver() {
+	listener, err := net.Listen("tcp", "localhost:8000")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for {
+		conn, err := listener.Accept()
+		
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+		//handle multiple clients
+		// go handleConn(conn)
+		go handleEchoConn(conn)
+	}
+}
+
+func handleEchoConn(c net.Conn) {
+    input := bufio.NewScanner(c)
+    for input.Scan() {
+		//a nested goroutine to make each echo async
+        go echo(c, input.Text(), 1*time.Second)
+    }
+    // NOTE: ignoring potential errors from input.Err()
+    c.Close()
+}
+
+func echo(c net.Conn, shout string, delay time.Duration) {
+    fmt.Fprintln(c, "\t", strings.ToUpper(shout))
+    time.Sleep(delay)
+	fmt.Fprintln(c, "\t\t", strings.ToUpper(shout))
+    time.Sleep(delay)
+	fmt.Fprintln(c, "\t\t\t", strings.ToUpper(shout))
+}
+
+
+
+func handleConn(c net.Conn) {
+	defer c.Close()
+	for {
+		t := time.Now().Format("15:04:05\n")
+		println("serving time: " + t)
+		_, err := io.WriteString(c, t)
+		if err != nil {
+			return // e.g., client disconnected
+		}
+		time.Sleep(1 * time.Second)
+	}
+}
+func goroutines_spinner() {
+	go spinner(100 * time.Millisecond)
+	time.Sleep(5 * time.Second)
+}
+
+func spinner(delay time.Duration) {
+	for {
+		for _, r := range `-\|/` {
+			fmt.Printf("\r%c", r)
+			time.Sleep(delay)
+		}
+	}
 }
 
 func goroutines_channels() {
@@ -23,9 +95,9 @@ func goroutines_channels() {
 	go responseSize2("https://www.example.com", urlSizeDetailsChannel)
 	go responseSize2("https://www.golang.org", urlSizeDetailsChannel)
 	go responseSize2("https://www.golang.org/doc", urlSizeDetailsChannel)
-	println(<- urlSizeDetailsChannel)
-	println(<- urlSizeDetailsChannel)
-	println(<- urlSizeDetailsChannel)
+	println(<-urlSizeDetailsChannel)
+	println(<-urlSizeDetailsChannel)
+	println(<-urlSizeDetailsChannel)
 
 }
 
@@ -52,8 +124,6 @@ func sequential() {
 func responseSize(url string) {
 	println(responseSizeHelper(url))
 }
-
-
 
 func responseSizeHelper(url string) string {
 	var sb strings.Builder
