@@ -19,19 +19,136 @@ import (
 // https://notes.shichao.io/gopl/ch8/#channels
 func main() {
 
-	// sequential()
-	// println()
+	//note: see app_test.go for demo drivers
 	// goroutines_naive()
 	// goroutines_channels()
 	// goroutines_spinner()
 	// goroutines_timeserver()
-	// waitGroups()
-	// syncDemoUsingAtomic()
-	syncDemoUsingMutex()
+	// goroutines_waitGroups()
+	// goroutines_syncDemoUsingAtomic()
+	// goroutines_syncDemoUsingMutex()
+	// goroutines_channelsDemo()
+	// goroutines_unbufferedChannels()
+	goroutines_bufferedChannels()
 
 }
 
-func syncDemoUsingMutex() {
+func goroutines_bufferedChannels() {
+	ch := make(chan int, 3)
+	defer close(ch)
+	var waitGroup sync.WaitGroup
+
+	produceSingleItemToBufferedChannel := func(i int, ch chan int) {
+		ch <- i
+	}
+
+	consumeAllValuesSlowlyFromBufferedChannel := func( ch chan int, maxRead int) {		
+		waitGroup.Add(1)
+		read := 0	
+		for {
+			//take a nap
+			fmt.Println("Zzzzzzzzzz")
+			time.Sleep(time.Millisecond*500)
+
+			//read all items currently in channel
+			for i := 0; i < len(ch); i++ {
+				if read >= maxRead {
+					fmt.Printf("Done reading %v values\n", read)
+					waitGroup.Done()
+					return
+				}
+				read++
+				fmt.Printf("Read: %v\n", <- ch)	
+			}			
+		}		
+	}
+
+	go consumeAllValuesSlowlyFromBufferedChannel(ch, 7)
+
+	for i := 0; i < 10; i++ {
+		go produceSingleItemToBufferedChannel(i, ch)
+	}
+
+	//shut down program 
+	waitGroup.Wait()
+
+
+
+}
+
+func goroutines_unbufferedChannels() {
+	ch := make(chan int)
+	defer close(ch)
+	var waitGroup sync.WaitGroup
+
+	produceSingleItemToUnbufferedChannel := func(i int, ch chan int) {
+		ch <- i
+	}
+
+	consumeAllValuesSlowlyFromUnbufferedChannel := func( ch chan int, maxRead int) {		
+		waitGroup.Add(1)
+		read := 0	
+		for {
+			if read >= maxRead {
+				fmt.Printf("Done reading %v values\n", read)
+				waitGroup.Done()
+				return
+			}
+			read++
+			//take a nap
+			fmt.Println("Zzzzzzzzzz")
+			time.Sleep(time.Millisecond*500)
+			i := <- ch	
+			fmt.Printf("Read: %v\n", i)	
+		}
+
+	}
+
+	go consumeAllValuesSlowlyFromUnbufferedChannel(ch, 7)
+
+	for i := 0; i < 10; i++ {
+		go produceSingleItemToUnbufferedChannel(i, ch)
+	}
+
+	//shut down program 
+	waitGroup.Wait()
+
+}
+
+func goroutines_channelsDemo() {
+	ch := make(chan int)
+
+
+	mult := func(x, y int) {
+		res := x*y
+		ch <- res
+	}
+
+
+	//pass value of channel as parameter
+	div := func(x, y int, channel chan int) {
+		res := x/y
+		channel <- res
+	}
+
+	go mult(10,2)
+	val, ok := <- ch
+	fmt.Printf("type of channel = %T\n", ch)	
+	fmt.Printf("type of channel = %v\n", ch)	
+	fmt.Printf("result of value = %v\n", val)	
+	fmt.Printf("result of ok = %v\n", ok)
+
+
+	ch2 := make(chan int)
+	go div(10,2, ch2)
+	val2, ok2 := <- ch2
+	fmt.Printf("type of channel2 = %T\n", ch2)	
+	fmt.Printf("type of channel2 = %v\n", ch2)	
+	fmt.Printf("result of value2 = %v\n", val2)	
+	fmt.Printf("result of ok2 = %v\n", ok2)
+}
+
+func goroutines_syncDemoUsingMutex() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	f := func(waitGroup *sync.WaitGroup, mutex *sync.Mutex, num *int64) {
 		defer waitGroup.Done() //decrement
@@ -64,7 +181,7 @@ func syncDemoUsingMutex() {
 	println("done")
 }
 
-func syncDemoUsingAtomic() {
+func goroutines_syncDemoUsingAtomic() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	f := func(waitGroup *sync.WaitGroup, num *int64) {
 		defer waitGroup.Done() //decrement
@@ -90,7 +207,7 @@ func syncDemoUsingAtomic() {
 	println("done")
 }
 
-func waitGroups() {
+func goroutines_waitGroups() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	f := func(waitGroup *sync.WaitGroup, i int) {
@@ -198,12 +315,6 @@ func goroutines_naive() {
 
 	time.Sleep(5 * time.Second) //not the best way to wait for all the goroutines to complete
 	println("done")
-
-}
-func sequential() {
-	responseSize("https://www.example.com")
-	responseSize("https://www.golang.org")
-	responseSize("https://www.golang.org/doc")
 
 }
 

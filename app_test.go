@@ -12,15 +12,6 @@ func TestHelloName(t *testing.T) {
 
 }
 
-
-func TestSequential(t *testing.T) {
-	sequential()
-}
-
-func TestPrintln(t *testing.T) {
-	println()
-}
-
 func TestGoroutines_naive(t *testing.T) {
 	goroutines_naive()
 }
@@ -30,13 +21,13 @@ func TestGoroutines_channels(t *testing.T) {
 }
 
 func TestWaitGroups(t *testing.T) {
-	waitGroups()
+	goroutines_waitGroups()
 }
 
 func TestSyncDemoUsingAtomic(t *testing.T) {
-	syncDemoUsingAtomic()
+	goroutines_syncDemoUsingAtomic()
 }
 
 func TestSyncDemoUsingMutex(t *testing.T) {
-	syncDemoUsingMutex()
+	goroutines_syncDemoUsingMutex()
 }
