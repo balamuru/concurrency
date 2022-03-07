@@ -35,14 +35,16 @@ func main() {
 
 func goroutines_bufferedChannels() {
 	ch := make(chan int, 3)
-	defer close(ch)
+	
 	var waitGroup sync.WaitGroup
 
 	produceSingleItemToBufferedChannel := func(i int, ch chan int) {
+		
 		ch <- i
 	}
 
 	consumeAllValuesSlowlyFromBufferedChannel := func( ch chan int, maxRead int) {		
+		defer close(ch)
 		waitGroup.Add(1)
 		read := 0	
 		for {
@@ -51,9 +53,10 @@ func goroutines_bufferedChannels() {
 			time.Sleep(time.Millisecond*500)
 
 			//read all items currently in channel
+			fmt.Println("Try to read all items currently in channel")
 			for i := 0; i < len(ch); i++ {
 				if read >= maxRead {
-					fmt.Printf("Done reading %v values\n", read)
+					fmt.Printf("Max read limit reached, read %v values\n", read)
 					waitGroup.Done()
 					return
 				}
@@ -78,19 +81,19 @@ func goroutines_bufferedChannels() {
 
 func goroutines_unbufferedChannels() {
 	ch := make(chan int)
-	defer close(ch)
 	var waitGroup sync.WaitGroup
 
 	produceSingleItemToUnbufferedChannel := func(i int, ch chan int) {
 		ch <- i
 	}
 
-	consumeAllValuesSlowlyFromUnbufferedChannel := func( ch chan int, maxRead int) {		
+	consumeAllValuesSlowlyFromUnbufferedChannel := func( ch chan int, maxRead int) {	
+		defer close(ch)	
 		waitGroup.Add(1)
 		read := 0	
 		for {
 			if read >= maxRead {
-				fmt.Printf("Done reading %v values\n", read)
+				fmt.Printf("Max read limit reached, read %v values\n", read)
 				waitGroup.Done()
 				return
 			}
