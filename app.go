@@ -36,7 +36,7 @@ func syncDemoUsingMutex() {
 	f := func(waitGroup *sync.WaitGroup, mutex *sync.Mutex, num *int64) {
 		defer waitGroup.Done() //decrement
 
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 100; i++ {
 
 			func() {
 				defer mutex.Unlock() //ensure unlock
@@ -52,7 +52,7 @@ func syncDemoUsingMutex() {
 	var mutex sync.Mutex
 
 	var num int64 = 0
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		waitGroup.Add(1)               //increment
 		go f(&waitGroup, &mutex, &num) //pass in ref
 	}
@@ -69,7 +69,7 @@ func syncDemoUsingAtomic() {
 	f := func(waitGroup *sync.WaitGroup, num *int64) {
 		defer waitGroup.Done() //decrement
 
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 100; i++ {
 			atomic.AddInt64(num, 1)
 			// *num++
 		}
@@ -78,7 +78,7 @@ func syncDemoUsingAtomic() {
 	var waitGroup sync.WaitGroup
 
 	var num int64 = 0
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		waitGroup.Add(1)       //increment
 		go f(&waitGroup, &num) //pass in ref
 	}
